@@ -1,0 +1,10 @@
+{
+  "name": "pest-warning-dashboard",
+  "version": "1.0.0",
+  "private": true,
+  "description": "SMARTRAPS-2.0 Pest Warning funder demo portal",
+  "scripts": {
+    "start": "python3 -m http.server 8080",
+    "dev": "python3 -m http.server 8080"
+  }
+}

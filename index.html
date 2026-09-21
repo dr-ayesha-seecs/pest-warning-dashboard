@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Pest Warning Dashboard · SMARTRAPS-2.0 Portal</title>
+<style>
+  :root { --navy:#1E2761; --blue:#2F6FED; --bg:#F4F6FB; --card:#fff; --muted:#5B6472; --line:#E4E8F0; }
+  *{box-sizing:border-box} body{margin:0;font-family:"Segoe UI",system-ui,sans-serif;background:var(--bg);color:#0F1115}
+  header{background:linear-gradient(135deg,var(--navy),#1a5f9e);color:#fff;padding:28px 24px}
+  header h1{margin:0 0 6px;font-size:1.6rem} header p{margin:0;opacity:.92;max-width:820px;line-height:1.45}
+  .wrap{max-width:1100px;margin:0 auto;padding:22px 20px 40px}
+  .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:18px 0 22px}
+  .kpi{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 16px;box-shadow:0 8px 24px rgba(30,39,97,.06)}
+  .kpi .l{font-size:.72rem;font-weight:700;color:var(--muted);text-transform:uppercase}
+  .kpi .v{font-size:1.25rem;font-weight:800;color:var(--navy);margin-top:4px}
+  .kpi .h{font-size:.78rem;color:var(--muted);margin-top:4px}
+  .cards{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  a.card{display:block;text-decoration:none;color:inherit;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:20px;box-shadow:0 8px 24px rgba(30,39,97,.06);transition:.15s}
+  a.card:hover{border-color:var(--blue);transform:translateY(-2px)}
+  a.card h2{margin:0 0 8px;color:var(--navy);font-size:1.15rem}
+  a.card p{margin:0;color:var(--muted);font-size:.92rem;line-height:1.45}
+  .tag{display:inline-block;margin-top:12px;background:#eef2ff;color:var(--navy);font-size:.72rem;font-weight:700;padding:4px 10px;border-radius:999px}
+  footer{margin-top:28px;font-size:.8rem;color:var(--muted);background:#eef1f8;border-radius:12px;padding:12px 14px}
+  @media(max-width:800px){.kpis,.cards{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap" style="padding-top:0;padding-bottom:0">
+    <div style="font-size:.75rem;font-weight:700;opacity:.85;margin-bottom:6px">MNSUAM · PARB Theme-1 · SMARTRAPS-2.0</div>
+    <h1>Pest Warning Dashboard Portal</h1>
+    <p>Funder demonstration portal for the planned pest-warning GIS dashboard and entomologist-validated knowledge base — fruit-fly surveillance in South Punjab mango orchards, plus multi-crop pest infographics (mango, cotton, wheat, maize).</p>
+  </div>
+</header>
+<div class="wrap">
+  <div class="kpis">
+    <div class="kpi"><div class="l">Fruit-fly losses</div><div class="v">~US$200M/yr</div><div class="h">Quarantine / export barrier</div></div>
+    <div class="kpi"><div class="l">SMARTRAPS-1.0 AI</div><div class="v">92.9% mAP</div><div class="h">194,050 Five-Pest images</div></div>
+    <div class="kpi"><div class="l">Project ask</div><div class="v">Rs 49.42 M</div><div class="h">36 months · PARB CGS</div></div>
+    <div class="kpi"><div class="l">Demo targets</div><div class="v">50 traps + KB</div><div class="h">PW sites · KissanBot API</div></div>
+  </div>
+  <div class="cards">
+    <a class="card" href="map/">
+      <h2>🗺️ Fruit-fly density map</h2>
+      <p>South Punjab district boundaries, heatmap and trap sites for <em>Bactrocera</em> spp. in mango orchards — species filters, district ranking, live-looking Pest Warning trap IDs.</p>
+      <span class="tag">Open map →</span>
+    </a>
+    <a class="card" href="crops/">
+      <h2>📊 Crop pest knowledge</h2>
+      <p>Infographics for major pests on mango, cotton, wheat and maize — pressure indices, seasonal windows, and SMARTRAPS knowledge-base linkage for advisory.</p>
+      <span class="tag">Open crops →</span>
+    </a>
+  </div>
+  <footer>
+    <strong>Demo notice:</strong> Map densities and crop pressure scores are illustrative for briefing. Project KPIs follow the PARB concept clearance proforma. Live trap feeds and entomologist-validated KB content will be produced under SMARTRAPS-2.0.
+  </footer>
+</div>
+</body>
+</html>
