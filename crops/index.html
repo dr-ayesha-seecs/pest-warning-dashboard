@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>SMARTRAPS-2.0 · Pest Knowledge Dashboard (Funder Demo)</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+  :root {
+    --navy: #1E2761;
+    --navy-2: #2a3480;
+    --blue: #2F6FED;
+    --teal: #16A085;
+    --orange: #E67E22;
+    --green: #0F9D58;
+    --purple: #8E44AD;
+    --red: #C0392B;
+    --bg: #F4F6FB;
+    --card: #FFFFFF;
+    --text: #0F1115;
+    --muted: #5B6472;
+    --line: #E4E8F0;
+    --shadow: 0 8px 28px rgba(30,39,97,.08);
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+    background: var(--bg); color: var(--text); line-height: 1.45;
+  }
+  .wrap { max-width: 1280px; margin: 0 auto; padding: 20px 22px 40px; }
+  header.app {
+    background: linear-gradient(135deg, var(--navy), #24306e 55%, #1a5f9e);
+    color: #fff; border-radius: 18px; padding: 22px 26px; box-shadow: var(--shadow);
+    display: grid; grid-template-columns: 1fr auto; gap: 16px; align-items: start;
+  }
+  header.app h1 { margin: 0 0 6px; font-size: 1.35rem; font-weight: 700; letter-spacing: .2px; }
+  header.app .sub { opacity: .92; font-size: .92rem; max-width: 720px; }
+  .badge {
+    background: rgba(255,255,255,.14); border: 1px solid rgba(255,255,255,.25);
+    border-radius: 999px; padding: 6px 12px; font-size: .75rem; font-weight: 600;
+    white-space: nowrap;
+  }
+  .kpis {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin: 16px 0 18px;
+  }
+  .kpi {
+    background: var(--card); border-radius: 14px; padding: 14px 16px; box-shadow: var(--shadow);
+    border: 1px solid var(--line);
+  }
+  .kpi .label { color: var(--muted); font-size: .75rem; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; }
+  .kpi .value { font-size: 1.35rem; font-weight: 800; color: var(--navy); margin-top: 4px; }
+  .kpi .hint { font-size: .78rem; color: var(--muted); margin-top: 4px; }
+  .tabs {
+    display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px;
+  }
+  .tab {
+    border: 1px solid var(--line); background: #fff; color: var(--navy);
+    border-radius: 999px; padding: 10px 16px; font-weight: 700; cursor: pointer;
+    transition: .15s ease;
+  }
+  .tab:hover { border-color: var(--blue); }
+  .tab.active { background: var(--navy); color: #fff; border-color: var(--navy); }
+  .grid {
+    display: grid; grid-template-columns: 1.15fr .85fr; gap: 14px;
+  }
+  .card {
+    background: var(--card); border-radius: 16px; border: 1px solid var(--line);
+    box-shadow: var(--shadow); padding: 16px 18px;
+  }
+  .card h2 { margin: 0 0 4px; font-size: 1.05rem; color: var(--navy); }
+  .card .meta { color: var(--muted); font-size: .85rem; margin-bottom: 12px; }
+  .pest-list { display: grid; gap: 10px; }
+  .pest {
+    display: grid; grid-template-columns: 56px 1fr auto; gap: 12px; align-items: center;
+    border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; background: #fafbfe;
+  }
+  .pest .icon {
+    width: 56px; height: 56px; border-radius: 12px; display: grid; place-items: center;
+    color: #fff; font-weight: 800; font-size: .85rem;
+  }
+  .pest h3 { margin: 0; font-size: .95rem; }
+  .pest .sci { color: var(--muted); font-size: .8rem; font-style: italic; }
+  .pest .desc { font-size: .82rem; margin-top: 3px; color: #333; }
+  .sev {
+    text-align: center; min-width: 64px;
+  }
+  .sev .n { font-size: 1.2rem; font-weight: 800; }
+  .sev .l { font-size: .68rem; color: var(--muted); text-transform: uppercase; font-weight: 700; }
+  .bar-wrap { height: 8px; background: #e8ecf5; border-radius: 99px; margin-top: 6px; overflow: hidden; }
+  .bar { height: 100%; border-radius: 99px; }
+  .charts { display: grid; gap: 14px; }
+  .chart-box { position: relative; height: 220px; }
+  .chart-box.tall { height: 260px; }
+  footer.note {
+    margin-top: 16px; font-size: .78rem; color: var(--muted);
+    background: #eef1f8; border-radius: 12px; padding: 12px 14px; border: 1px solid var(--line);
+  }
+  .pill-row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+  .pill {
+    font-size: .72rem; font-weight: 700; padding: 4px 8px; border-radius: 999px;
+    background: #eef2ff; color: var(--navy);
+  }
+  .smartraps-link {
+    margin-top: 12px; padding: 12px; border-radius: 12px; background: linear-gradient(90deg,#eef6ff,#f3f0ff);
+    border: 1px dashed #b7c7ef; font-size: .85rem;
+  }
+  .smartraps-link strong { color: var(--navy); }
+  @media (max-width: 960px) {
+    .kpis, .grid { grid-template-columns: 1fr; }
+    header.app { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<div id="portal-nav" style="background:#0f1740;color:#fff;padding:8px 14px;display:flex;gap:14px;align-items:center;font-family:Segoe UI,system-ui,sans-serif;font-size:14px;z-index:9999;position:relative">
+  <a href="../" style="color:#fff;text-decoration:none;font-weight:700">Pest Warning Portal</a>
+  <a href="../map/" style="color:#c7d2fe;text-decoration:none">Map</a>
+  <a href="../crops/" style="color:#c7d2fe;text-decoration:none">Crops</a>
+  <span style="margin-left:auto;opacity:.75;font-size:12px">SMARTRAPS-2.0 · DEMO</span>
+</div>
+
+<div class="wrap">
+  <header class="app">
+    <div>
+      <h1>SMARTRAPS-2.0 · Pest Knowledge & Surveillance Dashboard</h1>
+      <div class="sub">Funder demonstration — major insect pests on mango, cotton, wheat &amp; maize (Pakistan / South Punjab). Anchored to the PARB concept note: AIoT fruit-fly traps + entomologist-validated knowledge base for digital advisory (KissanBot / Concave Agri).</div>
+    </div>
+    <div class="badge">DEMO · MNSUAM · PARB Theme-1</div>
+  </header>
+
+  <section class="kpis" id="kpis"></section>
+
+  <nav class="tabs" id="tabs"></nav>
+
+  <div class="grid">
+    <section class="card">
+      <h2 id="crop-title">—</h2>
+      <div class="meta" id="crop-meta"></div>
+      <div class="pest-list" id="pest-list"></div>
+      <div class="smartraps-link" id="smartraps-note"></div>
+    </section>
+    <section class="charts">
+      <div class="card">
+        <h2>Relative pest pressure (demo index)</h2>
+        <div class="meta">Illustrative severity for funder walkthrough — not a field forecast.</div>
+        <div class="chart-box"><canvas id="severityChart"></canvas></div>
+      </div>
+      <div class="card">
+        <h2>Seasonal activity window</h2>
+        <div class="meta">Typical peak months in Punjab cropping calendar (illustrative).</div>
+        <div class="chart-box tall"><canvas id="seasonChart"></canvas></div>
+      </div>
+    </section>
+  </div>
+
+  <footer class="note">
+    <strong>Disclaimer:</strong> Severity scores and seasonal bars are <em>demonstration / literature-informed</em> for funder briefing.
+    Under SMARTRAPS-2.0, the knowledge base will be entomologist-validated (MNSUAM IPP) against Pest Warning records and structured for API licensing.
+    Fruit-fly economic loss (~US$200M/yr), SMARTRAPS-1.0 metrics (194,050 images; YOLOv9 mAP 92.9%; patent; MVP Jun 2024), and project budget (Rs 49.42 M / 36 months) are from the PARB concept clearance proforma.
+  </footer>
+</div>
+
+<script>
+const COLORS = {
+  navy: '#1E2761', blue: '#2F6FED', teal: '#16A085', orange: '#E67E22',
+  green: '#0F9D58', purple: '#8E44AD', red: '#C0392B', gray: '#94A3B8'
+};
+
+const KPI = [
+  { label: 'Fruit-fly losses', value: '~US$200M / yr', hint: 'National · quarantine / export barrier' },
+  { label: 'SMARTRAPS-1.0 AI', value: '92.9% mAP', hint: 'YOLOv9 · 194,050 Five-Pest images' },
+  { label: 'Project ask', value: 'Rs 49.42 M', hint: '36 months · PARB CGS Theme-1' },
+  { label: 'Demo targets', value: '50 traps + KB', hint: 'PW sites · KissanBot API pathway' },
+];
+
+const CROPS = {
+  mango: {
+    name: 'Mango',
+    emoji: '🥭',
+    color: COLORS.orange,
+    blurb: 'High-value horticulture crop for South Punjab. Fruit flies are the principal constraint and a quarantine barrier to export; concept note focuses AIoT surveillance here first.',
+    importance: 'Export & high-value horticulture',
+    smartraps: '<strong>SMARTRAPS link:</strong> Primary field target — AIoT smart traps for real-time Bactrocera surveillance + alert-driven IPM (vs 5–8 calendar sprays). KB records feed advisory bots.',
+    pests: [
+      { code: 'Bz', name: 'Peach fruit fly', sci: 'Bactrocera zonata', color: COLORS.red, severity: 95, damage: 'Fruit puncture & larval spoilage; quarantine pest', season: [0,0,1,2,4,5,5,5,4,3,1,0] },
+      { code: 'Bd', name: 'Oriental fruit fly', sci: 'Bactrocera dorsalis', color: COLORS.orange, severity: 88, damage: 'Severe fruit damage; export rejection risk', season: [0,0,1,2,4,5,5,5,4,2,1,0] },
+      { code: 'Bc', name: 'Melon fruit fly', sci: 'Bactrocera cucurbitae', color: COLORS.purple, severity: 72, damage: 'Attacks fruiting hosts; regional pressure', season: [0,1,2,3,4,5,4,4,3,2,1,0] },
+      { code: 'Mh', name: 'Mango hopper', sci: 'Idioscopus spp.', color: COLORS.teal, severity: 65, damage: 'Flower/inflorescence damage; yield loss', season: [1,2,4,5,3,1,0,0,0,0,1,1] },
+      { code: 'Mm', name: 'Mango mealybug', sci: 'Drosicha mangiferae', color: COLORS.blue, severity: 58, damage: 'Sap sucking; sooty mould; tree vigour loss', season: [3,4,5,4,2,1,0,0,0,1,2,3] },
+    ]
+  },
+  cotton: {
+    name: 'Cotton',
+    emoji: '🌿',
+    color: COLORS.green,
+    blurb: 'Pakistan’s flagship cash crop. Sucking pests and bollworms drive heavy insecticide use; structured KB + thresholds enable advisory for alert-driven IPM.',
+    importance: 'Major cash / fibre crop',
+    smartraps: '<strong>SMARTRAPS link:</strong> Covered by the licensed pest knowledge base (taxonomy, ETL, thresholds, IPM) for digital advisory — complementary to orchard trap network.',
+    pests: [
+      { code: 'Wf', name: 'Cotton whitefly', sci: 'Bemisia tabaci', color: COLORS.blue, severity: 92, damage: 'CLCuV vector; honeydew; quality loss', season: [0,0,1,2,4,5,5,5,4,3,1,0] },
+      { code: 'Pb', name: 'Pink bollworm', sci: 'Pectinophora gossypiella', color: COLORS.red, severity: 90, damage: 'Boll damage; lint quality collapse', season: [0,0,0,1,2,3,5,5,5,4,2,0] },
+      { code: 'Ab', name: 'American bollworm', sci: 'Helicoverpa armigera', color: COLORS.orange, severity: 78, damage: 'Squares & bolls; multi-crop host', season: [0,0,1,2,3,4,5,4,3,2,1,0] },
+      { code: 'Js', name: 'Cotton jassid', sci: 'Amrasca biguttula', color: COLORS.teal, severity: 70, damage: 'Hopper burn; seedling / canopy stress', season: [0,1,2,4,5,5,4,3,2,1,0,0] },
+      { code: 'Th', name: 'Thrips', sci: 'Thrips tabaci / spp.', color: COLORS.purple, severity: 62, damage: 'Early-season leaf silvering; stunting', season: [0,1,3,5,5,4,2,1,1,1,0,0] },
+    ]
+  },
+  wheat: {
+    name: 'Wheat',
+    emoji: '🌾',
+    color: COLORS.orange,
+    blurb: 'Staple food crop for national food security. Aphids and armyworm outbreaks can rapidly cut yield; KB supports ETL-based advisory for extension & farmers.',
+    importance: 'Staple food security crop',
+    smartraps: '<strong>SMARTRAPS link:</strong> Field-crop records in the entomologist-validated KB (Phase 2b) enable advisory beyond horticulture — same API stack as KissanBot licensing.',
+    pests: [
+      { code: 'Ap', name: 'Wheat aphids', sci: 'Sitobion / Rhopalosiphum spp.', color: COLORS.green, severity: 85, damage: 'Sap sucking; virus vector; yield cut', season: [4,5,5,4,2,0,0,0,0,1,2,3] },
+      { code: 'Aw', name: 'Army worm', sci: 'Mythimna / Spodoptera spp.', color: COLORS.red, severity: 80, damage: 'Defoliation outbreaks; rapid loss', season: [2,3,4,5,3,1,0,0,0,0,1,2] },
+      { code: 'Tm', name: 'Termites', sci: 'Odontotermes / Microtermes', color: COLORS.orange, severity: 68, damage: 'Root / stem damage; patchy stands', season: [3,3,3,2,2,2,2,2,2,3,3,3] },
+      { code: 'Cw', name: 'Cutworm', sci: 'Agrotis spp.', color: COLORS.purple, severity: 55, damage: 'Seedling cutting; stand establishment', season: [2,3,4,3,1,0,0,0,0,1,2,2] },
+    ]
+  },
+  maize: {
+    name: 'Maize',
+    emoji: '🌽',
+    color: COLORS.teal,
+    blurb: 'Expanding feed and industrial crop. Fall armyworm and stem borers are high-priority threats; KB + thresholds support timely interventions.',
+    importance: 'Feed & industrial cereal',
+    smartraps: '<strong>SMARTRAPS link:</strong> Included in major-crop KB scope (wheat, cotton, rice, sugarcane, maize, gram + horticulture). Demo shows how funders see multi-crop coverage beyond fruit flies.',
+    pests: [
+      { code: 'Fa', name: 'Fall armyworm', sci: 'Spodoptera frugiperda', color: COLORS.red, severity: 93, damage: 'Whirl / cob damage; invasive threat', season: [1,2,3,4,5,5,4,3,2,2,1,1] },
+      { code: 'Sb', name: 'Stem borer', sci: 'Chilo / Sesamia spp.', color: COLORS.orange, severity: 82, damage: 'Dead heart; stem tunnelling; lodging', season: [1,2,3,4,5,4,3,2,2,1,1,1] },
+      { code: 'Sf', name: 'Shoot fly', sci: 'Atherigona soccata', color: COLORS.purple, severity: 64, damage: 'Dead hearts in seedlings', season: [1,2,4,5,4,2,1,1,1,1,1,1] },
+      { code: 'Ma', name: 'Maize aphids', sci: 'Rhopalosiphum maidis', color: COLORS.blue, severity: 58, damage: 'Sap sucking; honeydew; virus risk', season: [1,2,3,4,4,3,2,1,1,1,1,1] },
+    ]
+  }
+};
+
+const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+document.getElementById('kpis').innerHTML = KPI.map(k => `
+  <div class="kpi">
+    <div class="label">${k.label}</div>
+    <div class="value">${k.value}</div>
+    <div class="hint">${k.hint}</div>
+  </div>
+`).join('');
+
+const tabs = document.getElementById('tabs');
+Object.keys(CROPS).forEach((key, i) => {
+  const c = CROPS[key];
+  const btn = document.createElement('button');
+  btn.className = 'tab' + (i === 0 ? ' active' : '');
+  btn.textContent = `${c.emoji} ${c.name}`;
+  btn.onclick = () => selectCrop(key, btn);
+  tabs.appendChild(btn);
+});
+
+let severityChart, seasonChart;
+
+function selectCrop(key, btn) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  btn.classList.add('active');
+  renderCrop(key);
+}
+
+function renderCrop(key) {
+  const crop = CROPS[key];
+  document.getElementById('crop-title').textContent = `${crop.emoji} ${crop.name} — major insect pests`;
+  document.getElementById('crop-meta').innerHTML = `${crop.blurb}<div class="pill-row"><span class="pill">${crop.importance}</span><span class="pill">South Punjab / Pakistan context</span></div>`;
+  document.getElementById('smartraps-note').innerHTML = crop.smartraps;
+
+  document.getElementById('pest-list').innerHTML = crop.pests.map(p => `
+    <article class="pest">
+      <div class="icon" style="background:${p.color}">${p.code}</div>
+      <div>
+        <h3>${p.name}</h3>
+        <div class="sci">${p.sci}</div>
+        <div class="desc">${p.damage}</div>
+        <div class="bar-wrap"><div class="bar" style="width:${p.severity}%;background:${p.color}"></div></div>
+      </div>
+      <div class="sev">
+        <div class="n" style="color:${p.color}">${p.severity}</div>
+        <div class="l">Pressure</div>
+      </div>
+    </article>
+  `).join('');
+
+  const labels = crop.pests.map(p => p.name);
+  const values = crop.pests.map(p => p.severity);
+  const colors = crop.pests.map(p => p.color);
+
+  if (severityChart) severityChart.destroy();
+  severityChart = new Chart(document.getElementById('severityChart'), {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{
+        label: 'Demo pressure index (0–100)',
+        data: values,
+        backgroundColor: colors.map(c => c + 'CC'),
+        borderColor: colors,
+        borderWidth: 1.5,
+        borderRadius: 8,
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        y: { beginAtZero: true, max: 100, grid: { color: '#EEF1F6' } },
+        x: { ticks: { maxRotation: 45, minRotation: 0, font: { size: 10 } }, grid: { display: false } }
+      }
+    }
+  });
+
+  if (seasonChart) seasonChart.destroy();
+  seasonChart = new Chart(document.getElementById('seasonChart'), {
+    type: 'line',
+    data: {
+      labels: MONTHS,
+      datasets: crop.pests.slice(0, 4).map(p => ({
+        label: p.name,
+        data: p.season,
+        borderColor: p.color,
+        backgroundColor: p.color + '33',
+        tension: 0.35,
+        fill: false,
+        pointRadius: 2,
+        borderWidth: 2,
+      }))
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 10 } } } },
+      scales: {
+        y: { min: 0, max: 5, ticks: { stepSize: 1 }, title: { display: true, text: 'Activity (0–5)', font: { size: 11 } }, grid: { color: '#EEF1F6' } },
+        x: { grid: { display: false } }
+      }
+    }
+  });
+}
+
+renderCrop('mango');
+</script>
+</body>
+</html>
