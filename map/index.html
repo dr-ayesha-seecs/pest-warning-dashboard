@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>SMARTRAPS-2.0 · South Punjab Fruit-fly Density Map</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+  :root {
+    --navy:#1E2761; --blue:#2F6FED; --bg:#F4F6FB; --card:#fff; --text:#0F1115;
+    --muted:#5B6472; --line:#E4E8F0;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%;margin:0;font-family:"Segoe UI",system-ui,sans-serif;background:var(--bg);color:var(--text)}
+  .app{display:grid;grid-template-rows:auto 1fr;height:calc(100% - 40px)}
+  header{background:linear-gradient(135deg,var(--navy),#1a5f9e);color:#fff;padding:14px 18px;display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap}
+  header h1{margin:0;font-size:1.12rem}
+  header .sub{opacity:.9;font-size:.8rem;margin-top:2px}
+  .badge{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);border-radius:999px;padding:5px 10px;font-size:.72rem;font-weight:700}
+  .main{display:grid;grid-template-columns:360px 1fr;min-height:0}
+  aside{background:var(--card);border-right:1px solid var(--line);padding:14px;overflow:auto}
+  #map{min-height:0;height:100%;background:#dce6f2}
+  .kpi-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+  .kpi{background:#f7f9fc;border:1px solid var(--line);border-radius:10px;padding:10px}
+  .kpi .l{font-size:.66rem;color:var(--muted);font-weight:700;text-transform:uppercase}
+  .kpi .v{font-size:1.05rem;font-weight:800;color:var(--navy);margin-top:2px}
+  h2{font-size:.9rem;color:var(--navy);margin:14px 0 8px}
+  .filters label{display:flex;align-items:center;gap:8px;font-size:.84rem;margin:6px 0;cursor:pointer}
+  select,button.primary{width:100%;padding:8px 10px;border-radius:8px;border:1px solid var(--line);font:inherit}
+  button.primary{background:var(--navy);color:#fff;border:none;font-weight:700;cursor:pointer;margin-top:8px}
+  .district-list{display:grid;gap:6px;max-height:200px;overflow:auto}
+  .d-item{display:grid;grid-template-columns:1fr auto;gap:6px;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:#fafbfe;cursor:pointer;font-size:.8rem}
+  .d-item:hover,.d-item.active{border-color:var(--blue);background:#eef4ff}
+  .d-item .score{font-weight:800}
+  .legend{display:flex;gap:6px;align-items:center;font-size:.7rem;color:var(--muted);margin-top:8px;flex-wrap:wrap}
+  .swatch{width:18px;height:10px;border-radius:2px}
+  .chart-box{height:150px;margin-top:6px}
+  .note{font-size:.7rem;color:var(--muted);background:#eef1f8;border-radius:8px;padding:8px 10px;margin-top:12px;line-height:1.4}
+  .trap-feed{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.72rem;background:#0b1220;color:#d1e0ff;border-radius:8px;padding:8px;max-height:120px;overflow:auto;margin-top:6px}
+  .trap-feed .row{padding:2px 0;border-bottom:1px solid #1e293b}
+  .popup h3{margin:0 0 4px;font-size:.92rem;color:var(--navy)}
+  .popup code{background:#eef2ff;padding:1px 5px;border-radius:4px;font-size:.78rem}
+  .popup p{margin:3px 0;font-size:.8rem}
+  @media (max-width:900px){.main{grid-template-columns:1fr;grid-template-rows:45vh 1fr}}
+</style>
+</head>
+<body>
+<div id="portal-nav" style="background:#0f1740;color:#fff;padding:8px 14px;display:flex;gap:14px;align-items:center;font-family:Segoe UI,system-ui,sans-serif;font-size:14px;z-index:9999;position:relative">
+  <a href="../" style="color:#fff;text-decoration:none;font-weight:700">Pest Warning Portal</a>
+  <a href="../map/" style="color:#c7d2fe;text-decoration:none">Map</a>
+  <a href="../crops/" style="color:#c7d2fe;text-decoration:none">Crops</a>
+  <span style="margin-left:auto;opacity:.75;font-size:12px">SMARTRAPS-2.0 · DEMO</span>
+</div>
+
+<div class="app">
+  <header>
+    <div>
+      <h1>SMARTRAPS-2.0 · Fruit-fly density — South Punjab mango orchards</h1>
+      <div class="sub">Pest Warning–style district boundaries · live-looking trap IDs · Multan belt mango surveillance demo</div>
+    </div>
+    <div class="badge">DEMO · MNSUAM · GIS preview</div>
+  </header>
+  <div class="main">
+    <aside>
+      <div class="kpi-grid" id="kpis"></div>
+      <h2>Species filter</h2>
+      <div class="filters" id="speciesFilters"></div>
+      <h2>View mode</h2>
+      <select id="viewMode">
+        <option value="heat">Heatmap (density)</option>
+        <option value="traps">Trap sites</option>
+        <option value="both" selected>Boundaries + heatmap + traps</option>
+      </select>
+      <button class="primary" id="btnReset">Reset to South Punjab</button>
+      <h2>District pressure ranking</h2>
+      <div class="district-list" id="districtList"></div>
+      <div class="legend">
+        <span>Low</span>
+        <span class="swatch" style="background:#22c55e"></span>
+        <span class="swatch" style="background:#eab308"></span>
+        <span class="swatch" style="background:#f97316"></span>
+        <span class="swatch" style="background:#ef4444"></span>
+        <span>High flies/trap/week</span>
+      </div>
+      <h2>Selected district trend</h2>
+      <div class="chart-box"><canvas id="trendChart"></canvas></div>
+      <h2>Live trap feed (simulated)</h2>
+      <div class="trap-feed" id="trapFeed"></div>
+      <div class="note">
+        <strong>Boundaries:</strong> geoBoundaries PAK ADM2 (district polygons) for Multan, Bahawalpur, Rahim Yar Khan, Muzaffargarh, Khanewal, Lodhran, Dera Ghazi Khan.
+        Vehari is shown as trap sites only (not present in this ADM2 extract).
+        Trap IDs follow Pest Warning–style codes (<code>PW-DIST-ST-####</code>). Densities are demo until live SMARTRAPS feeds.
+      </div>
+    </aside>
+    <div id="map"></div>
+  </div>
+</div>
+<script>
+const SPECIES = [
+  { id:'zonata', name:'B. zonata', color:'#ef4444' },
+  { id:'dorsalis', name:'B. dorsalis', color:'#f97316' },
+  { id:'cucurbitae', name:'B. cucurbitae', color:'#a855f7' },
+];
+
+/** District metadata keyed to geojson id */
+const DISTRICTS = {
+  multan:        { name:'Multan', code:'MTN', mangoHa:18200, pressure:86 },
+  bahawalpur:    { name:'Bahawalpur', code:'BWP', mangoHa:9800, pressure:74 },
+  ryk:           { name:'Rahim Yar Khan', code:'RYK', mangoHa:22100, pressure:91 },
+  muzaffargarh:  { name:'Muzaffargarh', code:'MZG', mangoHa:12400, pressure:79 },
+  khanewal:      { name:'Khanewal', code:'KWL', mangoHa:7600, pressure:68 },
+  lodhran:       { name:'Lodhran', code:'LDH', mangoHa:5400, pressure:71 },
+  dgkhan:        { name:'Dera Ghazi Khan', code:'DGK', mangoHa:4200, pressure:58 },
+  vehari:        { name:'Vehari', code:'VHR', mangoHa:6100, pressure:63, lat:30.0452, lng:72.3489, noPolygon:true },
+};
+
+function seeded(n){ let x=Math.sin(n)*10000; return x-Math.floor(x); }
+
+function densColor(v){
+  if(v>=90) return '#ef4444';
+  if(v>=70) return '#f97316';
+  if(v>=50) return '#eab308';
+  return '#22c55e';
+}
+
+function buildTraps(centroids){
+  const traps=[];
+  let i=0;
+  Object.entries(DISTRICTS).forEach(([id,d])=>{
+    const c = centroids[id] || (d.lat!=null ? {lat:d.lat,lng:d.lng} : null);
+    if(!c) return;
+    const n = 8 + Math.floor(d.pressure/12);
+    for(let t=0;t<n;t++){
+      i++;
+      const ang = seeded(i*3.1)*Math.PI*2;
+      const rad = 0.05 + seeded(i*7.7)*0.18;
+      const lat = c.lat + Math.cos(ang)*rad*0.5;
+      const lng = c.lng + Math.sin(ang)*rad*0.65;
+      const base = d.pressure*(0.55+seeded(i*1.9)*0.7);
+      const bySpecies = {
+        zonata: Math.round(base*(0.7+seeded(i)*0.5)),
+        dorsalis: Math.round(base*0.85*(0.5+seeded(i+2)*0.6)),
+        cucurbitae: Math.round(base*0.45*(0.4+seeded(i+5)*0.7)),
+      };
+      const seq = 1000 + (Math.floor(seeded(i*13)*8000));
+      const idCode = `PW-${d.code}-ST-${String(seq).padStart(4,'0')}`;
+      const hw = `SM2-${d.code}-2026-${String(40+t).padStart(3,'0')}`;
+      traps.push({
+        id: idCode,
+        hwId: hw,
+        district: id,
+        districtName: d.name,
+        lat, lng, bySpecies,
+        status: seeded(i+9)>0.1 ? 'ONLINE' : 'SYNC_DELAY',
+        lastSeenMin: Math.floor(seeded(i+4)*90),
+        battery: Math.round(62 + seeded(i+6)*36),
+        week: Array.from({length:8},(_,w)=>Math.round(base*(0.6+seeded(i*11+w)*0.8)/8)),
+      });
+    }
+  });
+  return traps;
+}
+
+let activeSpecies = new Set(SPECIES.map(s=>s.id));
+let selectedDistrict = null;
+let heatLayer=null, trapLayer=null, boundaryLayer=null, trendChart=null;
+let TRAPS=[], CENTROIDS={};
+
+const map = L.map('map',{zoomControl:true}).setView([29.9,71.3],8);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
+  maxZoom:16, attribution:'&copy; OpenStreetMap · boundaries: geoBoundaries PAK ADM2'
+}).addTo(map);
+const southPunjabBounds = L.latLngBounds([27.9,69.5],[31.3,73.3]);
+map.setMaxBounds(southPunjabBounds.pad(0.4));
+
+document.getElementById('speciesFilters').innerHTML = SPECIES.map(s=>
+  `<label><input type="checkbox" checked data-id="${s.id}"/> <span style="color:${s.color};font-weight:700">●</span> ${s.name}</label>`
+).join('');
+document.getElementById('speciesFilters').addEventListener('change', e=>{
+  const id=e.target.dataset.id; if(!id) return;
+  if(e.target.checked) activeSpecies.add(id); else activeSpecies.delete(id);
+  redraw(); updateFeed();
+});
+
+function trapTotal(tr){
+  let s=0; activeSpecies.forEach(k=> s += tr.bySpecies[k]||0); return s;
+}
+
+function featureCentroid(geom){
+  let ring;
+  if(geom.type==='Polygon') ring=geom.coordinates[0];
+  else if(geom.type==='MultiPolygon'){
+    ring = geom.coordinates.reduce((a,p)=> p[0].length>a.length?p[0]:a, geom.coordinates[0][0]);
+  } else return null;
+  let x=0,y=0,n=ring.length-(ring[0][0]===ring[ring.length-1][0]?1:0);
+  for(let i=0;i<n;i++){ x+=ring[i][0]; y+=ring[i][1]; }
+  return {lat:y/n, lng:x/n};
+}
+
+function styleDistrict(feature){
+  const id = feature.properties.id;
+  const d = DISTRICTS[id];
+  const p = d ? d.pressure : 50;
+  const selected = selectedDistrict===id;
+  return {
+    color: selected ? '#1E2761' : '#334155',
+    weight: selected ? 3 : 1.4,
+    fillColor: densColor(p),
+    fillOpacity: selected ? 0.55 : 0.38,
+  };
+}
+
+function onEachDistrict(feature, layer){
+  const id = feature.properties.id;
+  const d = DISTRICTS[id];
+  layer.bindTooltip(
+    `<strong>${feature.properties.name}</strong><br/>Pressure ${d.pressure} · ${d.mangoHa.toLocaleString()} ha (demo)`,
+    {sticky:true}
+  );
+  layer.on({
+    click: ()=> selectDistrict(id),
+    mouseover: e=> e.target.setStyle({weight:3, fillOpacity:0.6}),
+    mouseout: e=> boundaryLayer.resetStyle(e.target),
+  });
+}
+
+function selectDistrict(id){
+  selectedDistrict=id;
+  document.querySelectorAll('.d-item').forEach(el=> el.classList.toggle('active', el.dataset.id===id));
+  if(boundaryLayer) boundaryLayer.setStyle(f=> styleDistrict(f));
+  const c = CENTROIDS[id] || (DISTRICTS[id]?.lat!=null ? {lat:DISTRICTS[id].lat,lng:DISTRICTS[id].lng}:null);
+  if(c) map.flyTo([c.lat,c.lng], 9.5, {duration:0.55});
+  renderTrend(id);
+  updateFeed();
+}
+
+function renderDistrictList(){
+  const ranked = Object.entries(DISTRICTS).map(([id,d])=>({id,...d})).sort((a,b)=>b.pressure-a.pressure);
+  document.getElementById('districtList').innerHTML = ranked.map(d=>`
+    <div class="d-item ${selectedDistrict===d.id?'active':''}" data-id="${d.id}">
+      <div><strong>${d.name}</strong><br/><span style="color:#5B6472">${d.mangoHa.toLocaleString()} ha · ${TRAPS.filter(t=>t.district===d.id).length} traps${d.noPolygon?' · no polygon':''}</span></div>
+      <div class="score" style="color:${densColor(d.pressure)}">${d.pressure}</div>
+    </div>`).join('');
+  document.querySelectorAll('.d-item').forEach(el=> el.onclick=()=>selectDistrict(el.dataset.id));
+}
+
+function heatPoints(){
+  return TRAPS.map(tr=>[tr.lat,tr.lng, Math.min(1, trapTotal(tr)/160)]);
+}
+
+function redraw(){
+  if(heatLayer){map.removeLayer(heatLayer); heatLayer=null;}
+  if(trapLayer){map.removeLayer(trapLayer); trapLayer=null;}
+  const mode=document.getElementById('viewMode').value;
+  if(mode==='heat'||mode==='both'){
+    heatLayer=L.heatLayer(heatPoints(),{radius:26,blur:20,maxZoom:12,gradient:{0.2:'#22c55e',0.45:'#eab308',0.7:'#f97316',1:'#ef4444'}}).addTo(map);
+  }
+  if(mode==='traps'||mode==='both'){
+    trapLayer=L.layerGroup();
+    TRAPS.forEach(tr=>{
+      const v=trapTotal(tr);
+      const m=L.circleMarker([tr.lat,tr.lng],{
+        radius:5+Math.min(12,v/20), color:'#fff', weight:1.2,
+        fillColor:densColor(v), fillOpacity:0.9
+      });
+      const parts=SPECIES.filter(s=>activeSpecies.has(s.id)).map(s=>`${s.name}: <strong>${tr.bySpecies[s.id]}</strong>`).join('<br/>');
+      m.bindPopup(`
+        <div class="popup">
+          <h3><code>${tr.id}</code></h3>
+          <p>Hardware <code>${tr.hwId}</code></p>
+          <p><strong>${tr.districtName}</strong> · <span style="color:${tr.status==='ONLINE'?'#0F9D58':'#E67E22'}">${tr.status}</span></p>
+          <p>Last uplink: ${tr.lastSeenMin} min ago · Battery ${tr.battery}%</p>
+          <p>${parts||'No species selected'}</p>
+          <p>Filtered total: <strong>${v}</strong> / week (demo)</p>
+        </div>`);
+      trapLayer.addLayer(m);
+    });
+    trapLayer.addTo(map);
+  }
+}
+
+function renderTrend(districtId){
+  const traps=TRAPS.filter(t=>t.district===districtId);
+  const weeks=['W-7','W-6','W-5','W-4','W-3','W-2','W-1','Now'];
+  const series=weeks.map((_,wi)=> traps.length? Math.round(traps.reduce((a,t)=>a+t.week[wi],0)/traps.length):0);
+  const d=DISTRICTS[districtId];
+  if(trendChart) trendChart.destroy();
+  trendChart=new Chart(document.getElementById('trendChart'),{
+    type:'line',
+    data:{labels:weeks,datasets:[{data:series,borderColor:'#1E2761',backgroundColor:'rgba(47,111,237,.15)',fill:true,tension:.35,pointRadius:3}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+      scales:{y:{beginAtZero:true,grid:{color:'#EEF1F6'},title:{display:true,text:d?d.name:'',font:{size:10}}},x:{grid:{display:false}}}}
+  });
+}
+
+function updateFeed(){
+  const pool = selectedDistrict ? TRAPS.filter(t=>t.district===selectedDistrict) : TRAPS.slice();
+  const rows = pool.slice().sort((a,b)=>a.lastSeenMin-b.lastSeenMin).slice(0,12);
+  document.getElementById('trapFeed').innerHTML = rows.map(tr=>
+    `<div class="row"><span style="color:${tr.status==='ONLINE'?'#4ade80':'#fbbf24'}">●</span> ${tr.id} · ${tr.districtName.slice(0,10)} · Σ${trapTotal(tr)} · ${tr.lastSeenMin}m · bat ${tr.battery}%</div>`
+  ).join('') || '<div class="row">No traps</div>';
+}
+
+document.getElementById('viewMode').onchange=redraw;
+document.getElementById('btnReset').onclick=()=>{
+  selectedDistrict=null;
+  if(boundaryLayer) boundaryLayer.setStyle(f=>styleDistrict(f));
+  map.flyToBounds(southPunjabBounds,{padding:[30,30]});
+  renderDistrictList();
+  renderTrend('ryk');
+  updateFeed();
+};
+
+async function boot(){
+  const geo = await fetch('data/south_punjab_districts.geojson').then(r=>r.json());
+  geo.features.forEach(f=>{
+    const c=featureCentroid(f.geometry);
+    if(c) CENTROIDS[f.properties.id]=c;
+  });
+  // Vehari fallback centroid
+  if(DISTRICTS.vehari) CENTROIDS.vehari={lat:DISTRICTS.vehari.lat,lng:DISTRICTS.vehari.lng};
+
+  TRAPS = buildTraps(CENTROIDS);
+  document.getElementById('kpis').innerHTML = [
+    {l:'Demo traps', v:TRAPS.length},
+    {l:'District polygons', v:geo.features.length},
+    {l:'Peak district', v:'R.Y. Khan'},
+    {l:'Ask (proforma)', v:'Rs 49.42M'},
+  ].map(k=>`<div class="kpi"><div class="l">${k.l}</div><div class="v">${k.v}</div></div>`).join('');
+
+  boundaryLayer = L.geoJSON(geo, { style: styleDistrict, onEachFeature: onEachDistrict }).addTo(map);
+  // Vehari label-only marker
+  L.circleMarker([DISTRICTS.vehari.lat, DISTRICTS.vehari.lng], {
+    radius:9, color:'#1E2761', weight:2, fillColor:densColor(DISTRICTS.vehari.pressure), fillOpacity:0.35, dashArray:'4 3'
+  }).bindTooltip('Vehari (traps only — polygon unavailable in ADM2 extract)').addTo(map);
+
+  renderDistrictList();
+  redraw();
+  renderTrend('ryk');
+  updateFeed();
+  map.fitBounds(boundaryLayer.getBounds(), {padding:[30,30]});
+
+  // simulate live feed tick
+  setInterval(()=>{
+    TRAPS.forEach(tr=>{
+      if(seeded(Date.now()/1000 + tr.bySpecies.zonata)<0.15){
+        tr.lastSeenMin = Math.max(0, tr.lastSeenMin-1);
+        if(tr.lastSeenMin===0){ tr.status='ONLINE'; tr.lastSeenMin=Math.floor(Math.random()*8); }
+      } else {
+        tr.lastSeenMin = Math.min(180, tr.lastSeenMin+1);
+        if(tr.lastSeenMin>45) tr.status='SYNC_DELAY';
+      }
+    });
+    updateFeed();
+  }, 4000);
+}
+boot().catch(err=>{
+  console.error(err);
+  document.getElementById('kpis').innerHTML=`<div class="kpi"><div class="l">Error</div><div class="v" style="font-size:.85rem">Could not load district GeoJSON. Serve folder via http.server.</div></div>`;
+});
+</script>
+</body>
+</html>
