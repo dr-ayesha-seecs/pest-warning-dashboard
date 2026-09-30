@@ -298,7 +298,7 @@ function redraw(){
     heatLayer=L.heatLayer(heatPoints(),{radius:18,blur:15,max:1.5,minOpacity:0.25,maxZoom:10,gradient:{0.0:'#16a34a',0.35:'#84cc16',0.55:'#eab308',0.75:'#f97316',1.0:'#dc2626'}}).addTo(map);
   }
   if(mode==='traps'||mode==='both'){
-    trapLayer=L.layerGroup();
+    trapLayer=L.layerGroup(); const {p95}=trapScale();
     TRAPS.forEach(tr=>{
       const v=trapTotal(tr);
       const m=L.circleMarker([tr.lat,tr.lng],{
